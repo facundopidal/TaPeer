@@ -1,0 +1,140 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>TaPeer — Jungle File & Text Sharing</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <script>
+    if (localStorage.getItem('theme') === 'dark') {
+      document.body.classList.add('dark-mode');
+    }
+  </script>
+  <div class="jungle-container">
+    <header class="jungle-header">
+      <div class="header-controls">
+        <button id="theme-toggle" class="theme-toggle-btn" aria-label="Toggle Theme">
+          <span class="theme-icon">🌙</span>
+        </button>
+      </div>
+      <h1>TaPeer</h1>
+      <p class="subtitle">Quick peer-to-peer file and text sharing, watched over by our tapir mascot.</p>
+    </header>
+
+    <main class="jungle-grid">
+      <!-- Mascot & Status Section -->
+      <section class="mascot-section card">
+        <div id="mascot-container">
+          <svg id="tapir-mascot" viewBox="0 0 300 200" width="300" height="200" xmlns="http://www.w3.org/2000/svg">
+            <!-- Shadows/Ground -->
+            <ellipse cx="150" cy="170" rx="80" ry="10" fill="#dcd7cd" />
+            
+            <!-- Back Legs -->
+            <rect x="110" y="120" width="16" height="45" rx="8" fill="#1f1f1f" />
+            <rect x="170" y="120" width="16" height="45" rx="8" fill="#1f1f1f" />
+
+            <!-- Body -->
+            <ellipse cx="150" cy="115" rx="65" ry="48" fill="#2C2C2C" />
+            
+            <!-- Front Legs -->
+            <rect x="95" y="120" width="18" height="45" rx="9" fill="#2C2C2C" />
+            <rect x="155" y="120" width="18" height="45" rx="9" fill="#2C2C2C" />
+
+            <!-- Tail -->
+            <path class="tail" d="M 215 110 Q 230 115 225 125" stroke="#2C2C2C" stroke-width="6" stroke-linecap="round" fill="none" />
+
+            <!-- Head Group -->
+            <g id="tapir-head">
+              <!-- Ears -->
+              <ellipse class="ear ear-left" cx="95" cy="65" rx="10" ry="16" fill="#1f1f1f" transform="rotate(-15 95 65)" />
+              <ellipse class="ear ear-right" cx="105" cy="60" rx="11" ry="18" fill="#2C2C2C" transform="rotate(10 105 60)" />
+              
+              <!-- Head Base -->
+              <ellipse cx="90" cy="90" rx="30" ry="25" fill="#2C2C2C" />
+              
+              <!-- Snout (Long Nose) -->
+              <g id="tapir-snout">
+                <!-- Upper snout -->
+                <path d="M 70 80 Q 40 80 35 100 Q 55 110 75 98 Z" fill="#2C2C2C" />
+                <!-- Nostril -->
+                <circle cx="42" cy="98" r="2.5" fill="#1a1a1a" />
+              </g>
+              
+              <!-- Eye -->
+              <circle cx="85" cy="85" r="3.5" fill="#FFFFFF" />
+              <circle cx="84" cy="84" r="1.5" fill="#000000" />
+            </g>
+
+            <!-- Success Leaf Badge -->
+            <g id="success-leaf">
+              <circle cx="215" cy="70" r="20" fill="#1D4D36" />
+              <!-- Leaf shape -->
+              <path d="M 207 78 Q 207 62 223 62 Q 223 78 207 78 Z" fill="#F4F0EA" />
+              <path d="M 207 78 L 223 62" stroke="#1D4D36" stroke-width="2" />
+              <!-- Checkmark inside badge -->
+              <path d="M 209 71 L 213 75 L 220 67" stroke="#F4F0EA" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" fill="none" />
+            </g>
+          </svg>
+        </div>
+        <div id="mascot-speech" class="speech-bubble">
+          <p id="speech-text">Feed me a file or drop a text snippet below! I'll keep it safe for 24 hours.</p>
+        </div>
+      </section>
+
+      <!-- Share File Section -->
+      <section class="share-section card">
+        <h2><span class="icon">📁</span> Upload File</h2>
+        <div id="dropzone" class="dropzone">
+          <p>Drag & drop your files here</p>
+          <p class="or-text">or</p>
+          <input type="file" id="file-input" hidden>
+          <button type="button" class="btn btn-secondary" onclick="document.getElementById('file-input').click()">Select File</button>
+        </div>
+        <div id="file-info" class="hidden">
+          <p>Selected: <strong id="selected-filename">filename.ext</strong> (<span id="selected-filesize">0 KB</span>)</p>
+          <button type="button" id="upload-btn" class="btn btn-primary">Feed File to Tapir</button>
+          <button type="button" id="cancel-upload" class="btn btn-link">Cancel</button>
+        </div>
+      </section>
+
+      <!-- Share Text Section -->
+      <section class="share-section card">
+        <h2><span class="icon">📝</span> Share Text Snippet</h2>
+        <form id="text-form">
+          <textarea id="text-input" placeholder="Paste your text snippet, logs, code, or links here..." required></textarea>
+          <button type="submit" class="btn btn-primary">Share Text Snippet</button>
+        </form>
+      </section>
+
+      <!-- Clipboard History Section -->
+      <section class="history-section card">
+        <h2><span class="icon">📜</span> Clipboard History</h2>
+        <div id="history-list" class="history-list">
+          <p class="no-history">No shared items yet</p>
+        </div>
+      </section>
+    </main>
+
+    <!-- Results Section -->
+    <section id="results-container" class="card hidden">
+      <h2><span class="icon">✨</span> Shared Successfully!</h2>
+      <div id="result-details">
+        <p id="result-message">Your item has been shared. Here is the retrieval link:</p>
+        <div class="link-box">
+          <input type="text" id="share-link" readonly>
+          <button type="button" id="copy-btn" class="btn btn-secondary">Copy</button>
+        </div>
+        <p class="expiry-warning">This link will expire and all data will be permanently deleted in 24 hours.</p>
+      </div>
+    </section>
+
+    <footer class="jungle-footer">
+      <p>TaPeer — Built with Node.js, Express, and Multer. Files automatically expire after 24 hours.</p>
+    </footer>
+  </div>
+
+  <script src="app.js"></script>
+</body>
+</html>

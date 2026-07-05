@@ -1,0 +1,623 @@
+/* TaPeer Earth & Jungle Theme Styling */
+
+:root {
+  --deep-jungle: #102A1E;
+  --foliage-green: #1D4D36;
+  --earth-mud: #6F583D;
+  --earth-mud-light: #8C7355;
+  --warm-sand: #F4F0EA;
+  --tapir-charcoal: #2C2C2C;
+  --alert-amber: #E69F00;
+  --shadow-color: rgba(16, 42, 30, 0.08);
+  --border-radius: 12px;
+  --font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+
+  /* Theme variables */
+  --bg-color: var(--warm-sand);
+  --text-color: var(--deep-jungle);
+  --card-bg: #ffffff;
+  --card-border: var(--earth-mud);
+  --card-shadow: var(--earth-mud);
+  --dashed-border: var(--warm-sand);
+
+  --btn-primary-bg: var(--foliage-green);
+  --btn-primary-text: var(--warm-sand);
+  --btn-primary-border: var(--deep-jungle);
+  --btn-primary-shadow: var(--deep-jungle);
+
+  --btn-secondary-bg: var(--warm-sand);
+  --btn-secondary-text: var(--deep-jungle);
+  --btn-secondary-border: var(--earth-mud);
+  --btn-secondary-shadow: var(--earth-mud);
+}
+
+body.dark-mode {
+  --bg-color: #0c1a13;
+  --text-color: #F4F0EA;
+  --card-bg: #142d20;
+  --card-border: #1d4d36;
+  --card-shadow: #1d4d36;
+  --dashed-border: #1d4d36;
+  --shadow-color: rgba(0, 0, 0, 0.3);
+
+  --btn-secondary-bg: #142d20;
+  --btn-secondary-text: #F4F0EA;
+  --btn-secondary-border: #1d4d36;
+  --btn-secondary-shadow: #1d4d36;
+}
+
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+body {
+  background-color: var(--bg-color);
+  color: var(--text-color);
+  font-family: var(--font-family);
+  line-height: 1.6;
+  padding: 2rem 1rem;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  min-height: 100vh;
+}
+
+.jungle-container {
+  width: 100%;
+  max-width: 900px;
+  box-sizing: border-box;
+  display: flex;
+  flex-direction: column;
+  gap: 2rem;
+}
+
+/* Header */
+.jungle-header {
+  text-align: center;
+  margin-bottom: 1rem;
+  position: relative;
+}
+
+.header-controls {
+  display: flex;
+  justify-content: flex-end;
+  margin-bottom: 0.5rem;
+}
+
+.theme-toggle-btn {
+  background: var(--card-bg);
+  border: 2px solid var(--card-border);
+  color: var(--text-color);
+  width: 44px;
+  height: 44px;
+  border-radius: 50%;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.3rem;
+  box-shadow: 3px 3px 0 var(--card-shadow);
+  transition: all 0.15s ease;
+  outline: none;
+}
+
+.theme-toggle-btn:hover {
+  transform: translate(-1px, -1px);
+  box-shadow: 4px 4px 0 var(--card-shadow);
+}
+
+.theme-toggle-btn:active {
+  transform: translate(2px, 2px);
+  box-shadow: 1px 1px 0 var(--card-shadow);
+}
+
+.jungle-header h1 {
+  font-size: 3rem;
+  color: var(--text-color);
+  font-weight: 800;
+  letter-spacing: -0.05em;
+  margin-bottom: 0.5rem;
+  text-shadow: 1px 1px 0 var(--bg-color), 2px 2px 0 var(--card-border);
+}
+
+.jungle-header h1::after {
+  content: " 🍃";
+  font-size: 2.2rem;
+}
+
+.subtitle {
+  color: var(--earth-mud-light);
+  font-size: 1.1rem;
+}
+
+body.dark-mode .subtitle {
+  color: #a89379;
+}
+
+/* Layout Grid */
+.jungle-grid {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 1.5rem;
+}
+
+@media (min-width: 768px) {
+  .jungle-grid {
+    grid-template-columns: 1.2fr 1.8fr;
+  }
+  
+  .mascot-section {
+    grid-row: span 3;
+    align-self: start;
+  }
+}
+
+/* Cards */
+.card {
+  background: var(--card-bg);
+  border: 2px solid var(--card-border);
+  border-radius: var(--border-radius);
+  padding: 1.75rem;
+  box-shadow: 4px 4px 0 var(--card-shadow);
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+  max-width: 100%;
+  box-sizing: border-box;
+}
+
+.card h2 {
+  font-size: 1.35rem;
+  margin-bottom: 1.25rem;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  color: var(--text-color);
+  border-bottom: 2px dashed var(--dashed-border);
+  padding-bottom: 0.5rem;
+}
+
+/* Mascot Section */
+.mascot-section {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 1rem;
+  min-height: 320px;
+  background: radial-gradient(circle at center, var(--card-bg) 60%, var(--bg-color) 100%);
+}
+
+#mascot-container {
+  position: relative;
+  width: 100%;
+  display: flex;
+  justify-content: center;
+}
+
+#tapir-mascot {
+  max-width: 100%;
+  height: auto;
+}
+
+@media (max-width: 480px) {
+  #tapir-mascot {
+    max-width: 200px;
+  }
+  .jungle-header h1 {
+    font-size: 2.2rem;
+  }
+}
+
+/* Speech Bubble */
+.speech-bubble {
+  background: var(--deep-jungle);
+  color: var(--warm-sand);
+  border-radius: 12px;
+  padding: 1rem 1.25rem;
+  position: relative;
+  text-align: center;
+  font-size: 0.95rem;
+  max-width: 260px;
+  box-shadow: 0 4px 6px var(--shadow-color);
+  border: 1px solid var(--foliage-green);
+}
+
+.speech-bubble::after {
+  content: "";
+  position: absolute;
+  bottom: 100%;
+  left: 50%;
+  transform: translateX(-50%);
+  border-width: 10px;
+  border-style: solid;
+  border-color: transparent transparent var(--deep-jungle) transparent;
+}
+
+/* Forms & Inputs */
+textarea {
+  width: 100%;
+  height: 150px;
+  padding: 1rem;
+  border: 2px solid var(--card-border);
+  border-radius: 8px;
+  background-color: var(--bg-color);
+  color: var(--text-color);
+  font-family: inherit;
+  font-size: 0.95rem;
+  resize: vertical;
+  outline: none;
+  margin-bottom: 1rem;
+  transition: border-color 0.2s ease;
+}
+
+textarea:focus {
+  border-color: var(--foliage-green);
+}
+
+/* Buttons */
+.btn {
+  display: inline-block;
+  width: 100%;
+  padding: 0.75rem 1.25rem;
+  font-size: 1rem;
+  font-weight: 700;
+  text-align: center;
+  border-radius: 8px;
+  border: 2px solid var(--tapir-charcoal);
+  cursor: pointer;
+  transition: all 0.15s ease;
+  outline: none;
+}
+
+body.dark-mode .btn {
+  border-color: var(--card-border);
+}
+
+.btn-primary {
+  background-color: var(--btn-primary-bg);
+  color: var(--btn-primary-text);
+  border-color: var(--btn-primary-border);
+  box-shadow: 3px 3px 0 var(--btn-primary-shadow);
+}
+
+.btn-primary:hover {
+  transform: translate(-1px, -1px);
+  box-shadow: 4px 4px 0 var(--btn-primary-shadow);
+}
+
+.btn-primary:active {
+  transform: translate(2px, 2px);
+  box-shadow: 1px 1px 0 var(--btn-primary-shadow);
+}
+
+.btn-secondary {
+  background-color: var(--btn-secondary-bg);
+  color: var(--btn-secondary-text);
+  border-color: var(--btn-secondary-border);
+  box-shadow: 3px 3px 0 var(--btn-secondary-shadow);
+}
+
+.btn-secondary:hover {
+  transform: translate(-1px, -1px);
+  box-shadow: 4px 4px 0 var(--btn-secondary-shadow);
+}
+
+.btn-secondary:active {
+  transform: translate(2px, 2px);
+  box-shadow: 1px 1px 0 var(--btn-secondary-shadow);
+}
+
+.btn-link {
+  background: none;
+  border: none;
+  color: var(--earth-mud-light);
+  text-decoration: underline;
+  box-shadow: none;
+  font-weight: 400;
+  margin-top: 0.5rem;
+}
+
+body.dark-mode .btn-link {
+  color: #a89379;
+}
+
+.btn-link:hover {
+  color: var(--alert-amber);
+}
+
+/* Dropzone styling */
+.dropzone {
+  border: 3px dashed var(--card-border);
+  border-radius: 8px;
+  padding: 2.5rem 1.5rem;
+  text-align: center;
+  background-color: var(--bg-color);
+  transition: all 0.2s ease;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  cursor: pointer;
+}
+
+.dropzone.drag-active {
+  border-color: var(--foliage-green);
+  background-color: rgba(29, 77, 54, 0.1);
+  transform: scale(1.02);
+}
+
+.dropzone p {
+  font-size: 1.05rem;
+  font-weight: 500;
+}
+
+.or-text {
+  font-size: 0.85rem;
+  color: var(--earth-mud-light);
+  margin: 0.25rem 0;
+}
+
+body.dark-mode .or-text {
+  color: #a89379;
+}
+
+/* Selected File Info */
+#file-info {
+  margin-top: 1rem;
+  padding: 1rem;
+  background-color: var(--bg-color);
+  border: 1px solid var(--card-border);
+  border-radius: 8px;
+  text-align: center;
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+/* Results box */
+#results-container {
+  animation: slide-up 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+}
+
+.link-box {
+  display: flex;
+  gap: 0.5rem;
+  margin: 1rem 0;
+}
+
+.link-box input {
+  flex-grow: 1;
+  padding: 0.75rem;
+  border: 2px solid var(--card-border);
+  border-radius: 8px;
+  background-color: var(--bg-color);
+  color: var(--text-color);
+  font-size: 0.95rem;
+  outline: none;
+}
+
+.link-box button {
+  width: auto;
+}
+
+.expiry-warning {
+  font-size: 0.85rem;
+  color: var(--earth-mud-light);
+  font-style: italic;
+}
+
+body.dark-mode .expiry-warning {
+  color: #a89379;
+}
+
+/* History List Styles */
+.history-list {
+  display: flex;
+  flex-direction: column;
+  gap: 1.25rem;
+}
+
+.history-item {
+  border: 2px solid var(--card-border);
+  border-radius: 8px;
+  padding: 1.25rem;
+  background-color: var(--bg-color);
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  box-shadow: 2px 2px 0 var(--card-shadow);
+  transition: transform 0.2s ease;
+}
+
+.history-item-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+}
+
+.history-item-title {
+  font-weight: 700;
+  font-size: 1rem;
+  color: var(--text-color);
+  word-break: break-all;
+  display: flex;
+  align-items: center;
+  gap: 0.25rem;
+}
+
+.history-item-meta {
+  font-size: 0.8rem;
+  color: var(--earth-mud-light);
+}
+
+body.dark-mode .history-item-meta {
+  color: #a89379;
+}
+
+.history-item-actions {
+  display: flex;
+  gap: 0.5rem;
+  align-items: center;
+  flex-wrap: wrap;
+}
+
+.history-item-actions .btn {
+  padding: 0.4rem 0.8rem;
+  font-size: 0.85rem;
+  width: auto;
+}
+
+.history-item-actions .btn-link {
+  margin-top: 0;
+  font-size: 0.85rem;
+}
+
+.snippet-preview {
+  font-family: monospace;
+  font-size: 0.85rem;
+  background: var(--card-bg);
+  padding: 0.75rem;
+  border-radius: 6px;
+  border: 1px solid var(--card-border);
+  white-space: pre-wrap;
+  word-break: break-all;
+  overflow-x: auto;
+}
+
+.no-history {
+  text-align: center;
+  color: var(--earth-mud-light);
+  font-style: italic;
+  padding: 1.5rem 0;
+}
+
+body.dark-mode .no-history {
+  color: #a89379;
+}
+
+/* Footer */
+.jungle-footer {
+  text-align: center;
+  font-size: 0.85rem;
+  color: var(--earth-mud-light);
+  margin-top: 1rem;
+}
+
+body.dark-mode .jungle-footer {
+  color: #a89379;
+}
+
+/* Helper utilities */
+.hidden {
+  display: none !important;
+}
+
+/* SVG Tapir Mascot Animations */
+
+/* 1. Idle Ear Wiggle */
+@keyframes ear-wiggle {
+  0%, 88%, 100% {
+    transform: rotate(-15deg);
+  }
+  90%, 96% {
+    transform: rotate(-28deg);
+  }
+  93% {
+    transform: rotate(-5deg);
+  }
+}
+
+@keyframes ear-wiggle-right {
+  0%, 88%, 100% {
+    transform: rotate(10deg);
+  }
+  90%, 96% {
+    transform: rotate(23deg);
+  }
+  93% {
+    transform: rotate(-3deg);
+  }
+}
+
+.ear-left {
+  transform-origin: 95px 75px;
+  animation: ear-wiggle 5s infinite;
+}
+
+.ear-right {
+  transform-origin: 105px 70px;
+  animation: ear-wiggle-right 5s infinite;
+}
+
+/* 2. Drag-over state (Snout Opens/Stretches) */
+#tapir-snout {
+  transform-origin: 70px 90px;
+  transition: transform 0.2s ease-in-out;
+}
+
+body.drag-over #tapir-snout {
+  transform: rotate(-12deg) scaleX(1.25);
+}
+
+/* 3. Uploading state (Chewing snout) */
+@keyframes chew {
+  0% {
+    transform: rotate(-8deg) translateY(0);
+  }
+  50% {
+    transform: rotate(8deg) translateY(4px) scaleY(0.9);
+  }
+  100% {
+    transform: rotate(-4deg) translateY(-2px);
+  }
+}
+
+body.uploading #tapir-snout {
+  animation: chew 0.25s infinite alternate ease-in-out;
+}
+
+/* 4. Success state (Tail wag and Leaf badge) */
+#success-leaf {
+  opacity: 0;
+  transform: scale(0);
+  transform-origin: 215px 70px;
+  transition: opacity 0.4s ease, transform 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.25);
+}
+
+body.success #success-leaf {
+  opacity: 1;
+  transform: scale(1);
+}
+
+.tail {
+  transform-origin: 215px 110px;
+}
+
+body.success .tail {
+  animation: wag 0.15s infinite alternate ease-in-out;
+}
+
+@keyframes wag {
+  0% {
+    transform: rotate(-8deg);
+  }
+  100% {
+    transform: rotate(18deg);
+  }
+}
+
+/* Animations */
+@keyframes slide-up {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}

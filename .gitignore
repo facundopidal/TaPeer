@@ -1,0 +1,5 @@
+.atl/
+node_modules/
+uploads/
+engram-export.json
+.env

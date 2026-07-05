@@ -1,0 +1,17 @@
+# Caddyfile configuration for TaPeer reverse proxy and landing dashboard
+
+:80 {
+    # Redirect traffic without trailing slash to preserve relative paths
+    redir /tapeer /tapeer/
+
+    # Reverse proxy /tapeer/* to the node application at port 3000
+    handle_path /tapeer/* {
+        reverse_proxy localhost:3000
+    }
+
+    # Serve the static dashboard at the root "/"
+    handle {
+        root * ./dashboard
+        file_server
+    }
+}

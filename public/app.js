@@ -46,6 +46,50 @@ function speak(message) {
   speechText.textContent = message;
 }
 
+// Helper: copy to clipboard with fallback
+function copyToClipboard(text, button) {
+  const performCopy = () => {
+    if (navigator.clipboard && navigator.clipboard.writeText) {
+      return navigator.clipboard.writeText(text);
+    }
+    // Fallback for HTTP (non-secure)
+    const textarea = document.createElement('textarea');
+    textarea.value = text;
+    textarea.style.position = 'fixed'; // Avoid scrolling
+    textarea.style.opacity = '0';
+    document.body.appendChild(textarea);
+    textarea.select();
+    try {
+      document.execCommand('copy');
+      return Promise.resolve();
+    } catch (err) {
+      return Promise.reject(err);
+    } finally {
+      document.body.removeChild(textarea);
+    }
+  };
+
+  performCopy().then(() => {
+    const originalText = button.textContent;
+    button.textContent = 'Copied!';
+    
+    // Temporary styling update for visual feedback
+    const originalColor = button.style.color;
+    const originalBg = button.style.backgroundColor;
+    
+    button.style.backgroundColor = 'var(--foliage-green)';
+    button.style.color = '#ffffff';
+    
+    setTimeout(() => {
+      button.textContent = originalText;
+      button.style.color = originalColor;
+      button.style.backgroundColor = originalBg;
+    }, 2000);
+  }).catch(err => {
+    console.error('Could not copy text: ', err);
+  });
+}
+
 // Global Drag & Drop Listeners (Snout wiggle when file over screen)
 let dragCounter = 0;
 
@@ -150,10 +194,10 @@ function handleSuccess(url, isSnippet = false) {
   resetStateClasses();
   document.body.classList.add('success');
   
-  const fullUrl = window.location.origin + url;
+  const cleanUrl = url.startsWith('/') ? url.slice(1) : url;
+  const fullUrl = new URL(cleanUrl, window.location.href).href;
   shareLink.value = fullUrl;
   resultsContainer.classList.remove('hidden');
-  resultsContainer.scrollIntoView({ behavior: 'smooth' });
   
   if (isSnippet) {
     speak("Yum! Text snippet digested! Copy the link to share it with your friends.");
@@ -179,7 +223,7 @@ uploadBtn.addEventListener('click', async () => {
   formData.append('file', selectedFile);
 
   try {
-    const response = await fetch('/upload', {
+    const response = await fetch('upload', {
       method: 'POST',
       body: formData
     });
@@ -218,7 +262,7 @@ textForm.addEventListener('submit', async (e) => {
   textInput.disabled = true;
 
   try {
-    const response = await fetch('/text', {
+    const response = await fetch('text', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json'
@@ -245,25 +289,7 @@ textForm.addEventListener('submit', async (e) => {
 
 // Copy link to clipboard
 copyBtn.addEventListener('click', () => {
-  shareLink.select();
-  shareLink.setSelectionRange(0, 99999); // For mobile devices
-  
-  navigator.clipboard.writeText(shareLink.value)
-    .then(() => {
-      const originalText = copyBtn.textContent;
-      copyBtn.textContent = 'Copied!';
-      copyBtn.style.backgroundColor = 'var(--foliage-green)';
-      copyBtn.style.color = '#ffffff';
-      
-      setTimeout(() => {
-        copyBtn.textContent = originalText;
-        copyBtn.style.backgroundColor = '';
-        copyBtn.style.color = '';
-      }, 2000);
-    })
-    .catch(err => {
-      console.error('Could not copy text: ', err);
-    });
+  copyToClipboard(shareLink.value, copyBtn);
 });
 
 // --- Theme Switch & History Implementation ---
@@ -326,30 +352,7 @@ function getRelativeTime(timestamp) {
   }
 }
 
-// Helper: copy to clipboard
-function copyToClipboard(text, button) {
-  navigator.clipboard.writeText(text)
-    .then(() => {
-      const originalText = button.textContent;
-      button.textContent = 'Copied!';
-      
-      // Temporary styling update for visual feedback
-      const originalColor = button.style.color;
-      const originalBg = button.style.backgroundColor;
-      
-      button.style.backgroundColor = 'var(--foliage-green)';
-      button.style.color = '#ffffff';
-      
-      setTimeout(() => {
-        button.textContent = originalText;
-        button.style.color = originalColor;
-        button.style.backgroundColor = originalBg;
-      }, 2000);
-    })
-    .catch(err => {
-      console.error('Could not copy text: ', err);
-    });
-}
+
 
 function renderHistory(items) {
   if (!items || items.length === 0) {
@@ -409,7 +412,7 @@ function renderHistory(items) {
         </div>
         <div class="history-item-meta">Size: ${formatBytes(item.size)}</div>
         <div class="history-item-actions">
-          <a href="/download/${item.id}" class="btn btn-primary" download>Download</a>
+          <a href="download/${item.id}" class="btn btn-primary" download>Download</a>
         </div>
       `;
     }
@@ -420,7 +423,7 @@ function renderHistory(items) {
 
 async function fetchHistory() {
   try {
-    const response = await fetch('/items');
+    const response = await fetch('items');
     if (!response.ok) {
       throw new Error('Failed to fetch history');
     }

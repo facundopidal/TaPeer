@@ -29,6 +29,8 @@
   --btn-secondary-text: var(--deep-jungle);
   --btn-secondary-border: var(--earth-mud);
   --btn-secondary-shadow: var(--earth-mud);
+
+  --jungle-link-color: #2e7d32;
 }
 
 body.dark-mode {
@@ -44,6 +46,8 @@ body.dark-mode {
   --btn-secondary-text: #F4F0EA;
   --btn-secondary-border: #1d4d36;
   --btn-secondary-shadow: #1d4d36;
+
+  --jungle-link-color: #4caf50;
 }
 
 * {
@@ -621,3 +625,16 @@ body.success .tail {
     transform: translateY(0);
   }
 }
+
+/* Jungle-themed links styling */
+.jungle-link {
+  color: var(--jungle-link-color);
+  text-decoration: underline;
+  font-weight: 600;
+  transition: color 0.15s ease;
+}
+
+.jungle-link:hover {
+  color: var(--alert-amber);
+}
+

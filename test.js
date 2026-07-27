@@ -252,6 +252,63 @@ async function runTests() {
     await fs.unlink(expiredMetaPath);
   });
 
+  // 9. Test GET Share Target query string URL extraction
+  await test('GET Share Target - Should extract first URL or fallback to text', async () => {
+    function extractUrlOrFallback(sharedTitle, sharedText, sharedUrl) {
+      const combinedText = [sharedText, sharedUrl, sharedTitle].filter(Boolean).join(' ');
+      const urlRegex = /(https?:\/\/[^\s"'<>`]+)/;
+      const match = combinedText.match(urlRegex);
+      let textToPost = '';
+      if (match) {
+        const rawUrl = match[1];
+        const punctMatch = rawUrl.match(/[.,!?):;\]}]+$/);
+        const trailingPunct = punctMatch ? punctMatch[0] : '';
+        textToPost = trailingPunct ? rawUrl.slice(0, -trailingPunct.length) : rawUrl;
+      } else {
+        textToPost = sharedText || sharedUrl || sharedTitle || '';
+      }
+      return textToPost;
+    }
+
+    assert.equal(extractUrlOrFallback(undefined, 'Watch: https://youtu.be/abc', undefined), 'https://youtu.be/abc');
+    assert.equal(extractUrlOrFallback(undefined, 'Hello World', undefined), 'Hello World');
+    assert.equal(extractUrlOrFallback('My Title', 'Check this: https://example.com/page. Please read!', 'https://example.com/page.'), 'https://example.com/page');
+    assert.equal(extractUrlOrFallback(undefined, undefined, 'https://tapeer.local/test?param=1'), 'https://tapeer.local/test?param=1');
+  });
+
+  // 10. Test Safe Linkify - Should escape HTML, format links, and strip trailing punctuation
+  await test('Safe Linkify - Should render secure anchors, escape HTML, and strip trailing punctuation', async () => {
+    const vm = require('vm');
+    const appJsPath = path.join(__dirname, 'public', 'app.js');
+    const appJsContent = await fs.readFile(appJsPath, 'utf8');
+
+    // Extract escapeHtml and safeLinkify implementations
+    const escapeHtmlIndex = appJsContent.indexOf('function escapeHtml(');
+    const escapeHtmlEndIndex = appJsContent.indexOf('// Helper: Format relative time');
+    const escapeHtmlCode = appJsContent.slice(escapeHtmlIndex, escapeHtmlEndIndex);
+
+    const safeLinkifyIndex = appJsContent.indexOf('function safeLinkify(');
+    const safeLinkifyEndIndex = appJsContent.indexOf('// Service Worker Registration');
+    const safeLinkifyCode = appJsContent.slice(safeLinkifyIndex, safeLinkifyEndIndex);
+
+    const context = vm.createContext({});
+    vm.runInContext(escapeHtmlCode, context);
+    vm.runInContext(safeLinkifyCode, context);
+    const safeLinkify = context.safeLinkify;
+
+    // Test simple linkification and trailing punctuation stripping
+    const output1 = safeLinkify('Go to http://test.com/a. and click!');
+    assert.equal(output1, 'Go to <a class="jungle-link" href="http://test.com/a" target="_blank" rel="noopener noreferrer">http://test.com/a</a>. and click!');
+
+    // Test XSS escaping
+    const output2 = safeLinkify('<script>alert(1)</script> https://safe.com');
+    assert.equal(output2, '&lt;script&gt;alert(1)&lt;/script&gt; <a class="jungle-link" href="https://safe.com" target="_blank" rel="noopener noreferrer">https://safe.com</a>');
+
+    // Test multiple punctuation marks
+    const output3 = safeLinkify('Is it https://google.com/???');
+    assert.equal(output3, 'Is it <a class="jungle-link" href="https://google.com/" target="_blank" rel="noopener noreferrer">https://google.com/</a>???');
+  });
+
   // Tear down server
   server.close();
   console.log('=============================================');

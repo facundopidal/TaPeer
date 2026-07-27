@@ -250,15 +250,13 @@ uploadBtn.addEventListener('click', async () => {
   }
 });
 
-// Text Share Submission
-textForm.addEventListener('submit', async (e) => {
-  e.preventDefault();
-  const text = textInput.value;
+// Share Text Snippet core function
+async function shareText(text, isIngestion = false) {
   if (!text || text.trim() === '') return;
 
   startUploadingAnimation();
   const submitBtn = textForm.querySelector('button[type="submit"]');
-  submitBtn.disabled = true;
+  if (submitBtn) submitBtn.disabled = true;
   textInput.disabled = true;
 
   try {
@@ -276,15 +274,24 @@ textForm.addEventListener('submit', async (e) => {
 
     const data = await response.json();
     handleSuccess(data.snippetUrl, true);
-    textInput.value = '';
+    if (!isIngestion) {
+      textInput.value = '';
+    }
   } catch (error) {
     resetStateClasses();
     speak("Oops! The snippet couldn't be digested. Please try again.");
     console.error(error);
   } finally {
-    submitBtn.disabled = false;
+    if (submitBtn) submitBtn.disabled = false;
     textInput.disabled = false;
   }
+}
+
+// Text Share Submission
+textForm.addEventListener('submit', async (e) => {
+  e.preventDefault();
+  const text = textInput.value;
+  await shareText(text);
 });
 
 // Copy link to clipboard
@@ -383,7 +390,7 @@ function renderHistory(items) {
           <span class="history-item-title">📝 Snippet (${formatBytes(item.size)})</span>
           <span class="history-item-meta">${relativeTime}</span>
         </div>
-        <pre class="snippet-preview" id="snippet-preview-${item.id}">${escapeHtml(displayText)}</pre>
+        <pre class="snippet-preview" id="snippet-preview-${item.id}">${safeLinkify(displayText)}</pre>
         <div class="history-item-actions">
           <button class="btn btn-secondary copy-snippet-btn">Copy</button>
           ${isLong ? `<button class="btn btn-link toggle-expand-btn">${isExpanded ? 'Show Less' : 'Show More'}</button>` : ''}
@@ -437,3 +444,68 @@ async function fetchHistory() {
 // Initial fetch and 5s polling
 fetchHistory();
 setInterval(fetchHistory, 5000);
+
+// Safe Linkification: escape HTML and wrap HTTP/HTTPS URLs in secure anchors
+function safeLinkify(text) {
+  if (!text) return '';
+  const urlRegex = /https?:\/\/[^\s"'<>`]+/g;
+  let lastIndex = 0, result = '';
+  let match;
+  while ((match = urlRegex.exec(text)) !== null) {
+    result += escapeHtml(text.substring(lastIndex, match.index));
+    let rawUrl = match[0];
+    const punctMatch = rawUrl.match(/[.,!?):;\]}]+$/);
+    const trailingPunct = punctMatch ? punctMatch[0] : '';
+    const cleanUrl = trailingPunct ? rawUrl.slice(0, -trailingPunct.length) : rawUrl;
+    
+    result += `<a class="jungle-link" href="${escapeHtml(cleanUrl)}" target="_blank" rel="noopener noreferrer">${escapeHtml(cleanUrl)}</a>${escapeHtml(trailingPunct)}`;
+    lastIndex = urlRegex.lastIndex;
+  }
+  return result + escapeHtml(text.substring(lastIndex));
+}
+
+// Service Worker Registration
+window.addEventListener('load', () => {
+  if ('serviceWorker' in navigator) {
+    navigator.serviceWorker.register('sw.js')
+      .then((reg) => console.log('Service Worker registered successfully:', reg.scope))
+      .catch((err) => console.error('Service Worker registration failed:', err));
+  }
+});
+
+// Immediate GET query parsing for Web Share Target
+(function handleIncomingShare() {
+  const urlParams = new URLSearchParams(window.location.search);
+  const sharedTitle = urlParams.get('title');
+  const sharedText = urlParams.get('text');
+  const sharedUrl = urlParams.get('url');
+
+  if (sharedTitle || sharedText || sharedUrl) {
+    // Immediately clear query parameters from browser address bar
+    const cleanUrl = window.location.origin + window.location.pathname;
+    window.history.replaceState({}, document.title, cleanUrl);
+
+    // Extract first HTTP/HTTPS URL
+    const combinedText = [sharedText, sharedUrl, sharedTitle].filter(Boolean).join(' ');
+    const urlRegex = /(https?:\/\/[^\s"'<>`]+)/;
+    const match = combinedText.match(urlRegex);
+    let textToPost = '';
+    
+    if (match) {
+      const rawUrl = match[1];
+      const punctMatch = rawUrl.match(/[.,!?):;\]}]+$/);
+      const trailingPunct = punctMatch ? punctMatch[0] : '';
+      textToPost = trailingPunct ? rawUrl.slice(0, -trailingPunct.length) : rawUrl;
+    } else {
+      textToPost = sharedText || sharedUrl || sharedTitle || '';
+    }
+
+    if (textToPost.trim() !== '') {
+      if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', () => shareText(textToPost, true));
+      } else {
+        shareText(textToPost, true);
+      }
+    }
+  }
+})();

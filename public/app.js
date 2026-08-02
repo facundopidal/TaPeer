@@ -9,6 +9,10 @@ const selectedFilesize = document.getElementById('selected-filesize');
 const uploadBtn = document.getElementById('upload-btn');
 const cancelUpload = document.getElementById('cancel-upload');
 
+const progressContainer = document.getElementById('progress-container');
+const uploadProgress = document.getElementById('upload-progress');
+const progressText = document.getElementById('progress-text');
+
 const textForm = document.getElementById('text-form');
 const textInput = document.getElementById('text-input');
 
@@ -21,6 +25,7 @@ const speechText = document.getElementById('speech-text');
 // State Variables
 let selectedFile = null;
 let quoteInterval = null;
+let activeUploadXHR = null;
 
 const TAPIR_QUOTES = [
   "Chewing on your file bits...",
@@ -157,8 +162,13 @@ function handleFileSelection(file) {
 
 // Cancel Selected File
 cancelUpload.addEventListener('click', () => {
+  if (activeUploadXHR) {
+    activeUploadXHR.abort();
+    activeUploadXHR = null;
+  }
   selectedFile = null;
   fileInput.value = '';
+  if (progressContainer) progressContainer.classList.add('hidden');
   fileInfo.classList.add('hidden');
   dropzone.classList.remove('hidden');
   resetStateClasses();
@@ -211,43 +221,75 @@ function handleSuccess(url, isSnippet = false) {
   }
 }
 
-// File Upload Submission
-uploadBtn.addEventListener('click', async () => {
+// File Upload Submission with XHR Progress & Client ID
+uploadBtn.addEventListener('click', () => {
   if (!selectedFile) return;
   
   startUploadingAnimation();
   uploadBtn.disabled = true;
-  cancelUpload.disabled = true;
+  cancelUpload.disabled = false;
+
+  if (progressContainer) {
+    progressContainer.classList.remove('hidden');
+    uploadProgress.value = 0;
+    progressText.textContent = '0%';
+  }
 
   const formData = new FormData();
   formData.append('file', selectedFile);
 
-  try {
-    const response = await fetch('upload', {
-      method: 'POST',
-      body: formData
-    });
+  const xhr = new XMLHttpRequest();
+  activeUploadXHR = xhr;
+  xhr.open('POST', 'upload', true);
 
-    if (!response.ok) {
-      throw new Error('Upload failed');
+  xhr.upload.onprogress = (e) => {
+    if (e.lengthComputable && progressContainer) {
+      const percent = Math.round((e.loaded / e.total) * 100);
+      uploadProgress.value = percent;
+      progressText.textContent = `${percent}%`;
     }
+  };
 
-    const data = await response.json();
-    handleSuccess(data.downloadUrl, false);
-    
-    // Reset file form
-    selectedFile = null;
-    fileInput.value = '';
-    fileInfo.classList.add('hidden');
-    dropzone.classList.remove('hidden');
-  } catch (error) {
-    resetStateClasses();
-    speak("Oops! I got a stomach ache... The upload failed. Please try again.");
-    console.error(error);
-  } finally {
+  xhr.onload = () => {
+    activeUploadXHR = null;
+    if (progressContainer) progressContainer.classList.add('hidden');
+
+    if (xhr.status >= 200 && xhr.status < 300) {
+      try {
+        const data = JSON.parse(xhr.responseText);
+        handleSuccess(data.downloadUrl, false);
+        selectedFile = null;
+        fileInput.value = '';
+        fileInfo.classList.add('hidden');
+        dropzone.classList.remove('hidden');
+      } catch (err) {
+        resetStateClasses();
+        speak("Oops! Failed to parse server response.");
+      }
+    } else {
+      resetStateClasses();
+      speak("Oops! I got a stomach ache... The upload failed. Please try again.");
+    }
     uploadBtn.disabled = false;
-    cancelUpload.disabled = false;
-  }
+  };
+
+  xhr.onerror = xhr.ontimeout = () => {
+    activeUploadXHR = null;
+    if (progressContainer) progressContainer.classList.add('hidden');
+    resetStateClasses();
+    speak("Network error or timeout during upload. Please try again.");
+    uploadBtn.disabled = false;
+  };
+
+  xhr.onabort = () => {
+    activeUploadXHR = null;
+    if (progressContainer) progressContainer.classList.add('hidden');
+    resetStateClasses();
+    speak("Upload cancelled.");
+    uploadBtn.disabled = false;
+  };
+
+  xhr.send(formData);
 });
 
 // Share Text Snippet core function
@@ -473,19 +515,60 @@ window.addEventListener('load', () => {
   }
 });
 
-// Immediate GET query parsing for Web Share Target
+// Web Share Target IndexedDB reader & Query params handler
+async function checkPendingSharesFromIDB() {
+  if (!('indexedDB' in window)) return false;
+  try {
+    const db = await new Promise((resolve, reject) => {
+      const req = indexedDB.open('TaPeerShareDB', 1);
+      req.onsuccess = () => resolve(req.result);
+      req.onerror = () => reject(req.error);
+    });
+
+    if (!db.objectStoreNames.contains('pending_shares')) return false;
+
+    const tx = db.transaction('pending_shares', 'readwrite');
+    const store = tx.objectStore('pending_shares');
+    const getReq = store.getAll();
+
+    const items = await new Promise((resolve, reject) => {
+      getReq.onsuccess = () => resolve(getReq.result);
+      getReq.onerror = () => reject(getReq.error);
+    });
+
+    if (items && items.length > 0) {
+      store.clear();
+      for (const item of items) {
+        if (item.type === 'file' && item.file) {
+          handleFileSelection(item.file);
+        } else if (item.type === 'text' && item.text) {
+          shareText(item.text, true);
+        }
+      }
+      return true;
+    }
+  } catch (err) {
+    console.error('Error reading pending shares from IndexedDB:', err);
+  }
+  return false;
+}
+
 (function handleIncomingShare() {
   const urlParams = new URLSearchParams(window.location.search);
   const sharedTitle = urlParams.get('title');
   const sharedText = urlParams.get('text');
   const sharedUrl = urlParams.get('url');
+  const isServerShared = urlParams.get('shared');
 
-  if (sharedTitle || sharedText || sharedUrl) {
-    // Immediately clear query parameters from browser address bar
+  if (sharedTitle || sharedText || sharedUrl || isServerShared) {
     const cleanUrl = window.location.origin + window.location.pathname;
     window.history.replaceState({}, document.title, cleanUrl);
 
-    // Extract first HTTP/HTTPS URL
+    if (isServerShared) {
+      fetchHistory();
+      speak("Item shared successfully!");
+    }
+
     const combinedText = [sharedText, sharedUrl, sharedTitle].filter(Boolean).join(' ');
     const urlRegex = /(https?:\/\/[^\s"'<>`]+)/;
     const match = combinedText.match(urlRegex);
@@ -507,5 +590,12 @@ window.addEventListener('load', () => {
         shareText(textToPost, true);
       }
     }
+  }
+
+  // Check IndexedDB for Service Worker intercepted shares
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', () => checkPendingSharesFromIDB());
+  } else {
+    checkPendingSharesFromIDB();
   }
 })();

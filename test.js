@@ -309,6 +309,43 @@ async function runTests() {
     assert.equal(output3, 'Is it <a class="jungle-link" href="https://google.com/" target="_blank" rel="noopener noreferrer">https://google.com/</a>???');
   });
 
+  // 11. Test POST /share-target fallback (file & text payloads)
+  await test('POST /share-target - Should process shared file/text and redirect to /?shared=1', async () => {
+    const boundary = '----WebKitFormBoundaryshare';
+    const body = [
+      `--${boundary}`,
+      'Content-Disposition: form-data; name="file"; filename="shared_photo.jpg"',
+      'Content-Type: image/jpeg',
+      '',
+      'fake-image-bytes',
+      `--${boundary}`,
+      'Content-Disposition: form-data; name="title"',
+      '',
+      'Shared Photo',
+      `--${boundary}--`,
+      ''
+    ].join('\r\n');
+
+    const res = await fetch(`${BASE_URL}/share-target`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': `multipart/form-data; boundary=${boundary}`
+      },
+      redirect: 'manual',
+      body: body
+    });
+
+    assert.equal(res.status, 303);
+    assert.ok(res.headers.get('location').includes('/?shared=1'));
+  });
+
+  // 12. Test Server timeouts configuration
+  await test('Server Configuration - Should configure server timeouts to 30 minutes', async () => {
+    const { configureServerTimeouts } = require('./server');
+    configureServerTimeouts(server);
+    assert.equal(server.timeout, 1800000);
+  });
+
   // Tear down server
   server.close();
   console.log('=============================================');

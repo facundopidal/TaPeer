@@ -96,6 +96,10 @@
         </div>
         <div id="file-info" class="hidden">
           <p>Selected: <strong id="selected-filename">filename.ext</strong> (<span id="selected-filesize">0 KB</span>)</p>
+          <div id="progress-container" class="hidden progress-container">
+            <progress id="upload-progress" value="0" max="100"></progress>
+            <span id="progress-text">0%</span>
+          </div>
           <button type="button" id="upload-btn" class="btn btn-primary">Feed File to Tapir</button>
           <button type="button" id="cancel-upload" class="btn btn-link">Cancel</button>
         </div>

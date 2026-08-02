@@ -69,6 +69,14 @@ app.post('/upload', upload.single('file'), async (req, res) => {
   const originalName = Buffer.from(req.file.originalname, 'latin1').toString('utf8');
   const expiryTime = Date.now() + 24 * 60 * 60 * 1000;
 
+  // Cleanup partial file if request is aborted prematurely
+  req.on('aborted', async () => {
+    console.warn(`Upload aborted by client for file ${id}`);
+    try {
+      await fs.unlink(path.join(UPLOADS_DIR, `${id}-file`));
+    } catch (e) {}
+  });
+
   const metadata = {
     id,
     originalName,
@@ -90,6 +98,50 @@ app.post('/upload', upload.single('file'), async (req, res) => {
   } catch (err) {
     console.error('Error saving file metadata:', err);
     res.status(500).json({ error: 'Failed to save metadata' });
+  }
+});
+
+// 1b. POST /share-target - Web Share Target direct server fallback
+app.post('/share-target', upload.single('file'), async (req, res) => {
+  try {
+    const { title, text, url: sharedUrl } = req.body;
+
+    if (req.file) {
+      const id = req.fileId || crypto.randomUUID();
+      const originalName = Buffer.from(req.file.originalname, 'latin1').toString('utf8');
+      const expiryTime = Date.now() + 24 * 60 * 60 * 1000;
+      const metadata = {
+        id,
+        originalName,
+        mimeType: req.file.mimetype,
+        size: req.file.size,
+        uploadTime: Date.now(),
+        expiryTime,
+        type: 'file'
+      };
+      await fs.writeFile(path.join(UPLOADS_DIR, `${id}-meta.json`), JSON.stringify(metadata, null, 2), 'utf8');
+    } else {
+      const combinedText = [text, sharedUrl, title].filter(Boolean).join(' ');
+      if (combinedText.trim()) {
+        const id = crypto.randomUUID();
+        const expiryTime = Date.now() + 24 * 60 * 60 * 1000;
+        const metadata = {
+          id,
+          originalName: `${id}-snippet.txt`,
+          mimeType: 'text/plain',
+          size: Buffer.byteLength(combinedText),
+          uploadTime: Date.now(),
+          expiryTime,
+          type: 'text'
+        };
+        await fs.writeFile(path.join(UPLOADS_DIR, `${id}-snippet.txt`), combinedText, 'utf8');
+        await fs.writeFile(path.join(UPLOADS_DIR, `${id}-meta.json`), JSON.stringify(metadata, null, 2), 'utf8');
+      }
+    }
+    res.redirect(303, '/?shared=1');
+  } catch (err) {
+    console.error('Error processing /share-target server fallback:', err);
+    res.redirect(303, '/');
   }
 });
 
@@ -263,11 +315,22 @@ async function cleanupExpiredFiles() {
 const CLEANUP_INTERVAL = 60 * 60 * 1000;
 setInterval(cleanupExpiredFiles, CLEANUP_INTERVAL);
 
-module.exports = { app, cleanupExpiredFiles, UPLOADS_DIR };
+function configureServerTimeouts(server) {
+  server.timeout = 30 * 60 * 1000; // 30 minutes
+  server.keepAliveTimeout = 60 * 1000; // 60 seconds
+  server.headersTimeout = 65 * 1000; // 65 seconds
+  if (server.requestTimeout !== undefined) {
+    server.requestTimeout = 30 * 60 * 1000; // 30 minutes
+  }
+  return server;
+}
+
+module.exports = { app, cleanupExpiredFiles, UPLOADS_DIR, configureServerTimeouts };
 
 if (require.main === module) {
   const PORT = process.env.PORT || 3000;
-  app.listen(PORT, () => {
+  const server = app.listen(PORT, () => {
     console.log(`Server running on port ${PORT}`);
   });
+  configureServerTimeouts(server);
 }

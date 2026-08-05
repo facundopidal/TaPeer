@@ -1,11 +1,13 @@
-const CACHE_NAME = 'tapeer-v3';
+const CACHE_NAME = 'tapeer-v4';
 const ASSETS_TO_CACHE = [
   './',
   'index.html',
   'app.js',
   'style.css',
   'manifest.json',
-  'icon.svg'
+  'icon.svg',
+  'icon-192.png',
+  'icon-512.png'
 ];
 
 // Install Event - Pre-cache core skeleton assets

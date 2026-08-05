@@ -506,12 +506,32 @@ function safeLinkify(text) {
   return result + escapeHtml(text.substring(lastIndex));
 }
 
-// Service Worker Registration
+// Service Worker Registration & Auto-Update Handler
 window.addEventListener('load', () => {
   if ('serviceWorker' in navigator) {
     navigator.serviceWorker.register('sw.js')
-      .then((reg) => console.log('Service Worker registered successfully:', reg.scope))
+      .then((reg) => {
+        console.log('Service Worker registered successfully:', reg.scope);
+        // Force check for SW update on page load
+        reg.update();
+
+        // Check for updates when app regains focus
+        document.addEventListener('visibilitychange', () => {
+          if (document.visibilityState === 'visible') {
+            reg.update();
+          }
+        });
+      })
       .catch((err) => console.error('Service Worker registration failed:', err));
+
+    // Reload page once new service worker takes over control
+    let refreshing = false;
+    navigator.serviceWorker.addEventListener('controllerchange', () => {
+      if (!refreshing) {
+        refreshing = true;
+        window.location.reload();
+      }
+    });
   }
 });
 

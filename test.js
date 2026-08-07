@@ -336,7 +336,7 @@ async function runTests() {
     });
 
     assert.equal(res.status, 303);
-    assert.ok(res.headers.get('location').includes('/?shared=1'));
+    assert.ok(res.headers.get('location').includes('shared=1'));
     const location = new URL(res.headers.get('location'), BASE_URL);
     assert.equal(location.searchParams.get('id').length, 36, 'Redirect should carry the created item id');
     assert.equal(location.searchParams.get('type'), 'file');

@@ -143,10 +143,10 @@ app.post('/share-target', upload.single('file'), async (req, res) => {
         query.set('type', 'text');
       }
     }
-    res.redirect(303, `/?${query.toString()}`);
+    res.redirect(303, `./?${query.toString()}`);
   } catch (err) {
     console.error('Error processing /share-target server fallback:', err);
-    res.redirect(303, '/');
+    res.redirect(303, './');
   }
 });
 

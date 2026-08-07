@@ -101,10 +101,11 @@ app.post('/upload', upload.single('file'), async (req, res) => {
   }
 });
 
-// 1b. POST /share-target - Web Share Target direct server fallback
+// 1b. POST /share-target - Web Share Target server handling
 app.post('/share-target', upload.single('file'), async (req, res) => {
   try {
     const { title, text, url: sharedUrl } = req.body;
+    const query = new URLSearchParams({ shared: '1' });
 
     if (req.file) {
       const id = req.fileId || crypto.randomUUID();
@@ -120,6 +121,8 @@ app.post('/share-target', upload.single('file'), async (req, res) => {
         type: 'file'
       };
       await fs.writeFile(path.join(UPLOADS_DIR, `${id}-meta.json`), JSON.stringify(metadata, null, 2), 'utf8');
+      query.set('id', id);
+      query.set('type', 'file');
     } else {
       const combinedText = [text, sharedUrl, title].filter(Boolean).join(' ');
       if (combinedText.trim()) {
@@ -136,9 +139,11 @@ app.post('/share-target', upload.single('file'), async (req, res) => {
         };
         await fs.writeFile(path.join(UPLOADS_DIR, `${id}-snippet.txt`), combinedText, 'utf8');
         await fs.writeFile(path.join(UPLOADS_DIR, `${id}-meta.json`), JSON.stringify(metadata, null, 2), 'utf8');
+        query.set('id', id);
+        query.set('type', 'text');
       }
     }
-    res.redirect(303, '/?shared=1');
+    res.redirect(303, `/?${query.toString()}`);
   } catch (err) {
     console.error('Error processing /share-target server fallback:', err);
     res.redirect(303, '/');

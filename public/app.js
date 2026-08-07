@@ -535,50 +535,18 @@ window.addEventListener('load', () => {
   }
 });
 
-// Web Share Target IndexedDB reader & Query params handler
-async function checkPendingSharesFromIDB() {
-  if (!('indexedDB' in window)) return false;
-  try {
-    const db = await new Promise((resolve, reject) => {
-      const req = indexedDB.open('TaPeerShareDB', 1);
-      req.onsuccess = () => resolve(req.result);
-      req.onerror = () => reject(req.error);
-    });
-
-    if (!db.objectStoreNames.contains('pending_shares')) return false;
-
-    const tx = db.transaction('pending_shares', 'readwrite');
-    const store = tx.objectStore('pending_shares');
-    const getReq = store.getAll();
-
-    const items = await new Promise((resolve, reject) => {
-      getReq.onsuccess = () => resolve(getReq.result);
-      getReq.onerror = () => reject(getReq.error);
-    });
-
-    if (items && items.length > 0) {
-      store.clear();
-      for (const item of items) {
-        if (item.type === 'file' && item.file) {
-          handleFileSelection(item.file);
-        } else if (item.type === 'text' && item.text) {
-          shareText(item.text, true);
-        }
-      }
-      return true;
-    }
-  } catch (err) {
-    console.error('Error reading pending shares from IndexedDB:', err);
-  }
-  return false;
-}
-
+// Web Share Target server redirect handler.
+// The server stores the shared item and redirects to /?shared=1&id=...&type=...
+// so the resulting link can be surfaced directly, without service worker or
+// IndexedDB involvement.
 (function handleIncomingShare() {
   const urlParams = new URLSearchParams(window.location.search);
   const sharedTitle = urlParams.get('title');
   const sharedText = urlParams.get('text');
   const sharedUrl = urlParams.get('url');
   const isServerShared = urlParams.get('shared');
+  const sharedId = urlParams.get('id');
+  const sharedType = urlParams.get('type');
 
   if (sharedTitle || sharedText || sharedUrl || isServerShared) {
     const cleanUrl = window.location.origin + window.location.pathname;
@@ -586,14 +554,23 @@ async function checkPendingSharesFromIDB() {
 
     if (isServerShared) {
       fetchHistory();
+
+      if (sharedId) {
+        const isSnippet = sharedType === 'text';
+        const itemUrl = isSnippet ? `/snippet/${sharedId}` : `/download/${sharedId}`;
+        handleSuccess(itemUrl, isSnippet);
+        return;
+      }
+
       speak("Item shared successfully!");
+      return;
     }
 
     const combinedText = [sharedText, sharedUrl, sharedTitle].filter(Boolean).join(' ');
     const urlRegex = /(https?:\/\/[^\s"'<>`]+)/;
     const match = combinedText.match(urlRegex);
     let textToPost = '';
-    
+
     if (match) {
       const rawUrl = match[1];
       const punctMatch = rawUrl.match(/[.,!?):;\]}]+$/);
@@ -610,12 +587,5 @@ async function checkPendingSharesFromIDB() {
         shareText(textToPost, true);
       }
     }
-  }
-
-  // Check IndexedDB for Service Worker intercepted shares
-  if (document.readyState === 'loading') {
-    document.addEventListener('DOMContentLoaded', () => checkPendingSharesFromIDB());
-  } else {
-    checkPendingSharesFromIDB();
   }
 })();
